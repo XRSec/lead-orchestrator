@@ -79,7 +79,7 @@ Invoke explicitly via slash command (`/lead-orchestrator` or `/skill:lead-orches
 
 ## Support
 
-<a href="https://buymeacoffee.com/xrsec" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="42"></a>
+- **Afdian (爱发电 · WeChat / Alipay One-Time Tip)**: [https://ifdian.net/a/xrsec](https://ifdian.net/a/xrsec)
 
 ## License
 

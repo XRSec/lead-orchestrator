@@ -79,7 +79,7 @@ ln -s ~/.agents/skills/lead-orchestrator ~/.gemini/config/skills/lead-orchestrat
 
 ## 赞助支持
 
-<a href="https://buymeacoffee.com/xrsec" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="42"></a>
+- **爱发电（微信 / 支付宝单次打赏）**：[https://ifdian.net/a/xrsec](https://ifdian.net/a/xrsec)
 
 ## 开源协议
 
