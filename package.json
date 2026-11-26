@@ -2,7 +2,7 @@
   "name": "lead-orchestrator",
   "version": "1.0.0",
   "private": false,
-  "description": "Heuristic multi-tree multi-agent orchestrator skill across Claude Code, Pi, Cindy, and Antigravity with built-in specialist profiles.",
+  "description": "Zero-code-touch multi-agent orchestration skill with heuristic routing, multi-worktree isolation, and independent verification.",
   "license": "MIT",
   "repository": {
     "type": "git",
