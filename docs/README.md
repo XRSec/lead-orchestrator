@@ -79,4 +79,4 @@ Invoke explicitly via slash command (`/lead-orchestrator` or `/skill:lead-orches
 
 ## License
 
-[MIT](./LICENSE) © XRSec
+[MIT](../LICENSE) © XRSec

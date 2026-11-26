@@ -79,4 +79,4 @@ ln -s ~/.agents/skills/lead-orchestrator ~/.gemini/config/skills/lead-orchestrat
 
 ## 开源协议
 
-[MIT](./LICENSE) © XRSec
+[MIT](../LICENSE) © XRSec
