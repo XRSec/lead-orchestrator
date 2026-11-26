@@ -1,0 +1,6 @@
+interface:
+  display_name: "lead-orchestrator"
+  short_description: "Heuristic multi-tree orchestrator (runtimes/ + modes/ + profiles/) across Claude Code, Pi, Cindy, and Antigravity."
+
+policy:
+  allow_implicit_invocation: false

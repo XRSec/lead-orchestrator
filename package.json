@@ -1,0 +1,41 @@
+{
+  "name": "lead-orchestrator",
+  "version": "1.0.0",
+  "private": false,
+  "description": "Heuristic multi-tree multi-agent orchestrator skill across Claude Code, Pi, Cindy, and Antigravity with built-in specialist profiles.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/XRSec/lead-orchestrator.git"
+  },
+  "homepage": "https://github.com/XRSec/lead-orchestrator#readme",
+  "bugs": {
+    "url": "https://github.com/XRSec/lead-orchestrator/issues"
+  },
+  "keywords": [
+    "agent-skill",
+    "pi-package",
+    "claude-code",
+    "pi",
+    "cindy",
+    "antigravity",
+    "multi-agent",
+    "orchestrator",
+    "worktree"
+  ],
+  "pi": {
+    "skills": [
+      "./SKILL.md"
+    ]
+  },
+  "files": [
+    "SKILL.md",
+    "agents",
+    "modes",
+    "profiles",
+    "runtimes",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE"
+  ]
+}
