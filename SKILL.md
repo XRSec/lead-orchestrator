@@ -1,6 +1,6 @@
 ---
 name: lead-orchestrator
-description: "Heuristic multi-tree orchestrator across Claude Code, Pi (pi-subagents / Cindy), and Antigravity. Uses zero-cost heuristics to route across Host Runtime Trees (runtimes/*), Execution Topology Trees (modes/*: Focus, Swarm/Multi-Worktree, Team DAG), and Built-in Specialist Profile Trees (profiles/*), replacing external ~/.agent/agent/*.md files."
+description: "Orchestrate complex software engineering tasks through specialized subagents while keeping the main thread zero-code-touch. Triages requests into focused deep loops, parallel non-colliding worktrees/seams, or staged spec-to-delivery pipelines with verbatim intent handoff, independent fresh-context verification, and bounded 3-round repair loops."
 disable-model-invocation: true
 ---
 
@@ -36,7 +36,7 @@ Honor explicit bracket overrides (`[focus]`, `[swarm]`, `[team]`, `[best-of-n]`,
 - **Shared-Tree Disjoint Seams (`inherit`)**: Mandatory when parent checkout has uncommitted user edits, on `cindy_subagent`, or when parallel writers edit strictly non-overlapping file paths with zero `.git/index` commands.
 - **Session Context Trees**: Default `fresh` for `scout`, `implementer`, `verifier`; use `fork` ONLY to branch warm investigation context; use **warm continuation** (`SendMessage` / `resume` / `steer` / `send_message`) on the existing author tree for repair rounds `1..3`.
 
-## 3. Built-in Specialist Profile Tree (`<SKILL_DIR>/profiles/` — Replaces `~/.agent/agent/*.md`)
+## 3. Built-in Specialist Profile Tree (`<SKILL_DIR>/profiles/`)
 Strip YAML frontmatter and inject Markdown body as `<role_profile>` (or native `define_subagent` prompt):
 - `profiles/scout.md` — Read-only recon, dependency/seam graph, clean-tree & verification command discovery.
 - `profiles/investigator.md` — Hypothesis-falsifying debugger & pre-edit architecture oracle (`0` edits).
