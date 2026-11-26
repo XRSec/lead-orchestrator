@@ -77,6 +77,10 @@ ln -s ~/.agents/skills/lead-orchestrator ~/.gemini/config/skills/lead-orchestrat
 | `/lead-orchestrator [team] <任务描述>` | 完整多阶段 DAG：`scout` 探路 -> 澄清门禁 -> Scratch Manifest -> 分波次实施 |
 | `/lead-orchestrator [skip-interview] <任务描述>` | 在 `Team` 模式下跳过前置提问，直接记录显式假设推进 |
 
+## 赞助支持
+
+<a href="https://buymeacoffee.com/xrsec" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="42"></a>
+
 ## 开源协议
 
 [MIT](../LICENSE) © XRSec

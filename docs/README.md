@@ -77,6 +77,10 @@ Invoke explicitly via slash command (`/lead-orchestrator` or `/skill:lead-orches
 | `/lead-orchestrator [team] <task>` | Full staged DAG: `scout` -> clarify gate -> scratch manifest -> oracle -> lanes |
 | `/lead-orchestrator [skip-interview] <task>` | Bypass upfront clarification gate in `Team` mode and record explicit assumptions |
 
+## Support
+
+<a href="https://buymeacoffee.com/xrsec" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="42"></a>
+
 ## License
 
 [MIT](../LICENSE) © XRSec
