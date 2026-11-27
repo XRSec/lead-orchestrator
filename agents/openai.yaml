@@ -1,6 +1,6 @@
 interface:
   display_name: "lead-orchestrator"
-  short_description: "Zero-code-touch multi-agent orchestration and verification."
+  short_description: "Turn your session into a Tech Lead: auto-split tasks into a parallel jobs + needs subagent DAG with independent review."
 
 policy:
   allow_implicit_invocation: false
