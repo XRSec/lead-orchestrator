@@ -1,44 +1,50 @@
 # RUNTIME ADAPTER: PI (`pi-subagents` & CINDY `cindy_subagent`)
 
-Select Variant **P1** or **P2** from your declared tool names; keep total parent tool calls lean (`read` skill files in 1 parallel batch).
+Select Variant **P1** or **P2** from your declared tool names; read `<SKILL_DIR>` files in one parallel batch.
 
 ---
 
 ## Variant P1 — Native Pi (`subagent` / `subagents_enable`)
 
-### 1. Lazy Activation Gate
-If `subagent` is absent and `subagents_enable` is declared, call `subagents_enable({})` immediately; `subagent` unlocks on the next turn.
+### 1. Activation & Role Mapping
+- If `subagent` is absent and `subagents_enable` is declared, call `subagents_enable({})` first so `subagent` unlocks on the next turn.
+- Role mapping:
+  - `scout` -> `agent: "scout"`
+  - `investigator` -> `agent: "oracle"` (or `"researcher"` when external web lookup is needed)
+  - `implementer` / `integrator` -> `agent: "worker"`
+  - `verifier` -> `agent: "worker"` when running test/typecheck/lint gates (with `profiles/verifier.md` read-only instructions), or `agent: "reviewer"` for pure diff review.
 
-### 2. Role Mapping & Single Dispatch
-- `scout` -> `agent: "scout"`
-- `investigator` -> `agent: "oracle"` (or `"researcher"` when external web evidence via `pi-web-access` is required)
-- `implementer` / `integrator` -> `agent: "worker"`
-- `verifier` -> `agent: "worker"` when test/typecheck/lint shell gates must run (enforce `profiles/verifier.md` zero-edit rule in `task`), or `agent: "reviewer"` for pure read-only diff review.
-- Launch: `subagent({ agent: "<role>", task: "<role_profile>\n...\n</role_profile>\n\n" + brief })` (`async: true` by default; yield turn for native wake—NEVER sleep/poll).
+### 2. Encoding `jobs + needs` DAGs
+Choose either interactive async wakes or a single declarative JS DAG workflow:
+- **Programmatic `needs:` DAG (Recommended for Multi-Stage Parallel Graphs)**: Emit ONE ```` ```js workflow ```` block + call `subagent({ workflow: true })` in the same reply. Chain dependency promises per `needs:` edge using top-level `await`, `runs.run`, and `runs.all` (avoid nested `async function` or `async =>` for validator compatibility; leave `toolBudget`/`usageBudget` uncapped on `worker`):
+  ```js
+  const [sApi, sUi] = await runs.all([
+    runs.run({ agent: "scout", task: scoutApiBrief }),
+    runs.run({ agent: "scout", task: scoutUiBrief }),
+  ]);
+  const contract = await runs.run({ agent: "worker", task: buildContractBrief(sApi, sUi) });
+  const [implApi, implUi] = await runs.all([
+    runs.run({ agent: "worker", task: buildApiBrief(contract) }),
+    runs.run({ agent: "worker", task: buildUiBrief(contract) }),
+  ]);
+  await runs.run({ agent: "worker", task: buildVerifyBrief(implApi, implUi) });
+  ```
+- **Flat Parallel / Interactive Ready-Queue**: Use `subagent({ workflow: "parallel", args: { tasks: [...] } })` or concurrent `subagent({ agent, task })` calls (`async: true` by default) and unlock ready `PENDING` jobs on each completion wake.
 
-### 3. Multi-Tree Parallel & Staged Workflows
-Legacy top-level `tasks` / `chain` are unsupported. Choose one:
-- **Flat Parallel Fan-Out**: `subagent({ workflow: "parallel", args: { tasks: [{ agent, task, cwd?, model? }] } })`.
-- **Multi-Lane / Staged Tree (`Swarm` / `Team`)**: Write ONE ```` ```js workflow ```` block + call `subagent({ workflow: true })` in the **same reply** using `runs.run`, `runs.all`, `runs.lanes`, `runs.steer`.
-  - **Portability Redline**: Use top-level `await` and plain helper functions returning `runs.run(...)` ONLY—NEVER write nested `async function` or `async =>` (rejected by validator).
-  - Do NOT set hard `toolBudget` or tight `usageBudget` on `worker`.
-
-### 4. Warm Continuation & Worktree Gate
-- **Resume Rotates ID**: `subagent({ action: "resume", id: latestRunId, message })` returns a **new `runId`** on every pass—always target the newest `runId`! Live steer uses `action: "steer"`.
-- **`worktree: true` Cleanliness Gate**: `pi-subagents` rejects `worktree: true` if ANY tracked/untracked file is dirty (except `.pi/subagents/`). Use `worktree: true` ONLY on a clean checkout (for `~/.pi/agent/extensions` repos, place worktrees outside `extensions/`); if dirty, omit `worktree` and enforce disjoint file seams.
-- **Scratch Manifest Path**: `.pi/subagents/TASK_MANIFEST.md` (exempt from dirty-worktree check) or child `output: "plans/manifest.md"`.
+### 3. Warm Continuation & Worktree Policy
+- `subagent({ action: "resume", id: latestRunId, message })` rotates `runId` on each pass—always track the newest `runId` (`action: "steer"` for live runs).
+- `pi-subagents` accepts `worktree: true` only on a clean checkout (excluding `.pi/subagents/`). When dirty files exist, omit `worktree`, list dirty paths in `Protected Paths`, and run parallel jobs with disjoint `Owned Paths`.
+- Scratch Manifest Path: `.pi/subagents/TASK_MANIFEST.md`.
 
 ---
 
 ## Variant P2 — Cindy Pi (`cindy_subagent`)
 
-### 1. Strict `agent` Enum & Tool Ceiling
-`cindy_subagent` accepts ONLY `"scout" | "planner" | "reviewer" | "worker"`:
-- `"scout"`, `"planner"`, `"reviewer"` are locked to `read,grep,find,ls` (no `bash`).
-- Map `scout` -> `"scout"`, `investigator` -> `"planner"`, diff-only review -> `"reviewer"`, and **test-running `verifier`**, `implementer`, `integrator` -> `"worker"` with `<role_profile>` prepended.
+### 1. Role Mapping (`"scout" | "planner" | "reviewer" | "worker"`)
+- `"scout"`, `"planner"`, `"reviewer"` have read-only file tools (`read,grep,find,ls`, no `bash`).
+- Map `scout` -> `"scout"`, `investigator` -> `"planner"`, diff-only review -> `"reviewer"`, and shell-running `verifier` / `implementer` / `integrator` -> `"worker"` with `<role_profile>` prepended.
 
-### 2. Dispatch, Fan-Out & Continuation
-- **Single**: `cindy_subagent({ agent, title, task, async: true, context: "fresh"|"fork" })`.
-- **Parallel Batch (`<= 8` tasks, concurrency `4`)**: `cindy_subagent({ tasks: [{ agent, title, task }, ...], async: true })` (auto-collected at parent `agent_before_settle`).
-- **Warm Continuation**: Terminal run -> `cindy_subagent({ action: "resume", taskId: runId, childId, message })`; live run -> `action: "steer" | "follow_up"`.
-- **Shared-Tree Only**: `cindy_subagent` shares `cwd` (`isolation: "inherit"`). Enforce strictly disjoint `Authorized Scope` file seams and zero `.git/index` commands across parallel workers. Store scratch manifests in `$TMPDIR/lo-manifest-<session>.md`.
+### 2. Parallel `needs:` Execution & Continuation
+- **Ready-Batch Fan-Out (`<= 8` tasks, concurrency `4`)**: Dispatch all currently ready jobs (`needs` satisfied) via `cindy_subagent({ tasks: [{ agent, title: "[job-id] ...", task }, ...], async: true })` or parallel single calls; on completion wake, immediately dispatch newly unblocked `PENDING` jobs from `TASK_MANIFEST.md`.
+- **Warm Continuation**: Completed run -> `cindy_subagent({ action: "resume", taskId: runId, childId, message })`; live run -> `action: "steer" | "follow_up"`.
+- **Shared-Tree Disjoint Seams**: `cindy_subagent` runs in shared `cwd`; assign non-overlapping `Owned Paths`, defer shared bundling to a fan-in job, and store `TASK_MANIFEST.md` at `$TMPDIR/lo-manifest-<session>.md`.

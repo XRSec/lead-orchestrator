@@ -1,24 +1,24 @@
 # RUNTIME ADAPTER: CLAUDE CODE (2.1+)
 
-## 1. Primitive Mapping (`Agent` & `SendMessage`)
-Claude Code `Agent` runs in the background by default (`run_in_background` defaults to `true`) and has **no `resume` field on `Agent`**. Always assign a unique lowercase `name` so the child session stays addressable via `SendMessage`:
+## 1. Role Mapping (`Agent` & `SendMessage`)
+Claude Code `Agent` runs asynchronously in the background by default (`run_in_background: true`). Give every job a unique lowercase `name` matching its `job_id` so it remains addressable via `SendMessage`:
 
 | Profile (`profiles/*.md`) | `subagent_type` | Dispatch Call |
 |---|---|---|
-| **`scout`** | `"Explore"` (pure search/read) or `"general-purpose"` (if read-only bash needed) | `Agent({ name: "<seam>-scout", description: "...", subagent_type: "Explore", prompt })` |
-| **`investigator` (fresh)** | `"general-purpose"` | `Agent({ name: "<topic>-oracle", description: "...", subagent_type: "general-purpose", prompt })` |
-| **`investigator` (warm fork)** | `"fork"` | `Agent({ name: "<topic>-fork", description: "...", subagent_type: "fork", prompt })` *(omit `model` and `effort` on `"fork"`)* |
-| **`implementer`** | `"general-purpose"` | `Agent({ name: "<seam>-impl", description: "...", subagent_type: "general-purpose", isolation?, prompt })` |
-| **`verifier`** | `"general-purpose"` | `Agent({ name: "<seam>-verify", description: "...", subagent_type: "general-purpose", prompt })` |
-| **`integrator`** | `"general-purpose"` | `Agent({ name: "release-integrator", description: "...", subagent_type: "general-purpose", prompt })` |
+| **`scout`** | `"Explore"` (pure search/read) or `"general-purpose"` (if read-only bash needed) | `Agent({ name: "<job-id>", description: "[<job-id>] ...", subagent_type: "Explore", prompt })` |
+| **`investigator` (fresh)** | `"general-purpose"` | `Agent({ name: "<job-id>", description: "[<job-id>] ...", subagent_type: "general-purpose", prompt })` |
+| **`investigator` (warm fork)** | `"fork"` | `Agent({ name: "<job-id>", description: "[<job-id>] ...", subagent_type: "fork", prompt })` *(omit `model` and `effort` on `"fork"`)* |
+| **`implementer`** | `"general-purpose"` | `Agent({ name: "<job-id>", description: "[<job-id>] ...", subagent_type: "general-purpose", isolation?, prompt })` |
+| **`verifier`** | `"general-purpose"` | `Agent({ name: "<job-id>", description: "[<job-id>] ...", subagent_type: "general-purpose", prompt })` |
+| **`integrator`** | `"general-purpose"` | `Agent({ name: "<job-id>", description: "[<job-id>] ...", subagent_type: "general-purpose", prompt })` |
 
-## 2. Async Fan-Out & Warm Continuation
-1. **Parallel Sub-Trees**: Emit all independent `Agent(...)` calls in a **single assistant response**, then end your turn and wait for background completion wakes. Set `run_in_background: false` ONLY when nothing else can proceed and immediate blocking is required.
-2. **Warm Continuation (Repair / Steer)**: Send delta feedback via `SendMessage({ to: "<name>", message: "<DELTA BRIEF>" })` (or returned `agentId`). Do NOT spawn a fresh `Agent` for normal Round 1–3 fixes unless `SendMessage` is unavailable in a stripped SDK host.
-3. **Model & Effort**: Omit `model` and `effort` unless the user explicitly requested them.
+## 2. Reactive `needs:` Fan-Out & Warm Continuation
+1. **Parallel Ready Batch**: Emit all currently ready `Agent(...)` calls (`needs: []` initially) in a **single assistant response**, then end your turn for background completion wakes. Keep `run_in_background: true` (default) so multiple jobs run concurrently.
+2. **Wake-and-Unlock (`needs:` Resolution)**: Each background `Agent` notifies the parent independently upon completion. On every completion wake, mark that `job_id = DONE` in `TASK_MANIFEST.md` and immediately emit `Agent(...)` calls for any `PENDING` jobs whose `needs` are now all `DONE`—even while other background agents are still running.
+3. **Warm Continuation (Repair / Steer)**: Route `Round 1..3` fixes via `SendMessage({ to: "<job-id>", message: "<DELTA BRIEF>" })` (or returned `agentId`) so the author retains full context. Omit `model` and `effort` unless requested by the user.
 
-## 3. Worktree & Scratch Rules on Claude Code
-1. **`isolation: "worktree"` Gate**: Claude Code branches temporary worktrees from `HEAD`, **excluding uncommitted edits** in the parent working copy.
-   - Clean parent checkout + build/test contention or Best-of-N -> pass `isolation: "worktree"` and instruct `implementer` to commit locally on its worktree branch so `integrator` can merge/cherry-pick it.
-   - Dirty parent checkout -> OMIT `isolation` and enforce strictly disjoint `Authorized Scope` file lists in shared `cwd`.
-2. **Scratch Manifest Path**: Store `TASK_MANIFEST.md` at `$TMPDIR/lo-manifest-<repo-name>.md`—NEVER write untracked `.t3/` files inside the repository.
+## 3. Worktree & Scratch Handling
+1. **Worktree vs Disjoint Seams**:
+   - `isolation: "worktree"` branches from `HEAD`, omitting uncommitted parent edits. Use it when `HEAD` is clean and parallel jobs would contend on shared files/builds or `[best-of-n]` candidates (instruct each author to commit locally on its worktree branch for `integrator`).
+   - When the parent working copy has uncommitted edits—or when jobs touch non-overlapping directories—omit `isolation`, list uncommitted user files in `Protected Paths`, and run parallel jobs on shared `cwd` with disjoint `Owned Paths`.
+2. **Scratch Manifest Path**: `$TMPDIR/lo-manifest-<repo-name>.md`.

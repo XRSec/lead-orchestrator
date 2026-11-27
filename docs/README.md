@@ -2,44 +2,42 @@
 
 English | [简体中文](./README.zh-CN.md)
 
-A **Heuristic + Multi-Tree** multi-agent orchestration skill that turns your active coding session into a strict coordinator across **Claude Code (2.1+)**, **Pi (`pi-subagents` & Cindy `cindy_subagent`)**, and **Antigravity (AGY)** — with **5 built-in specialist profiles** replacing scattered `~/.agent/agent/*.md` files.
+An **Automatic `jobs + needs` Async DAG** multi-agent orchestration skill that turns your active coding session into an event-driven scheduling brain across **Claude Code (2.1+)**, **Pi (`pi-subagents` & Cindy `cindy_subagent`)**, and **Antigravity (AGY)** — with **5 built-in specialist profiles** replacing scattered `~/.agent/agent/*.md` files.
 
 ---
 
-## Why Multi-Tree + Heuristics?
+## Why Automatic `jobs + needs` DAG + Heuristics?
 
-Monolithic orchestration prompts waste context on irrelevant host syntax and force every task through a rigid waterfall. `lead-orchestrator` uses a **55-line root router (`SKILL.md`)** with three zero-cost heuristics (`H1`–`H3`) to load **only the active branch** across three orthogonal trees:
+Users should describe *what* they want, not micromanage how subagents are scheduled. Traditional orchestration prompts either dump every platform's syntax into one massive file or serialize work behind coarse wave barriers. `lead-orchestrator` pairs a **compact root router (`SKILL.md`)** (`H1`–`H3`) with an **event-driven Ready-Queue scheduler** (modeled on GitHub Actions `jobs.<id>.needs`):
 
 ```text
 lead-orchestrator/
-├── SKILL.md                    # Heuristic Root Router (H1 Host × H2 Mode × H3 Isolation)
+├── SKILL.md                    # Heuristic Root Router + Reactive needs: Scheduler
 ├── agents/
 │   └── openai.yaml             # Explicit-invocation policy metadata
-├── runtimes/                   # Tree A: Host Runtime Adapter (loads ONLY 1 active host)
-│   ├── claude-code.md          # Claude Code 2.1+ (Agent + SendMessage + worktree gate)
-│   ├── pi.md                   # Native Pi (pi-subagents / js workflow) & Cindy (cindy_subagent)
+├── runtimes/                   # Tree A: Host Runtime Adapter (loads active host)
+│   ├── claude-code.md          # Claude Code 2.1+ (async Agent + SendMessage + worktree)
+│   ├── pi.md                   # Native Pi (js workflow DAG) & Cindy (cindy_subagent)
 │   └── antigravity.md          # Antigravity (define_subagent / invoke_subagent / run_workflow)
-├── modes/                      # Tree B: Execution Topology (loads ONLY 1 selected mode)
-│   ├── focus.md                # Single-seam deep loop (verbatim -> author -> verifier -> warm delta)
-│   ├── swarm.md                # Multi-tree sharding, Best-of-N worktrees & multi-angle audits
-│   └── team.md                 # Staged DAG (recon -> clarify -> scratch manifest -> oracle -> lanes)
-└── profiles/                   # Tree C: Built-in Specialist Personas (replaces ~/.agent/agent/*.md)
-    ├── scout.md                # Read-only recon, dependency/seam graph & cleanliness check
-    ├── investigator.md         # Hypothesis-falsifying debugger & pre-edit architecture oracle
-    ├── implementer.md          # Scoped code author with strict seam/worktree boundary lock
-    ├── verifier.md             # Fresh-context adversarial diff & test gatekeeper (0 file edits)
-    └── integrator.md           # Post-PASS multi-worktree merger, docs sync & authorized SCM
+├── modes/                      # Tree B: Execution Topology (loads selected mode)
+│   ├── focus.md                # Single-seam deep loop (author -> fresh verifier -> warm delta)
+│   ├── swarm.md                # Automatic jobs + needs parallel DAG, Best-of-N & audits
+│   └── team.md                 # Spec-to-delivery DAG (parallel scouts -> manifest -> lanes)
+└── profiles/                   # Tree C: Built-in Specialist Personas
+    ├── scout.md                # Read-only domain recon & candidate jobs + needs seam mapper
+    ├── investigator.md         # Hypothesis-falsifying debugger & architecture oracle
+    ├── implementer.md          # Scoped DAG job author within owned_paths / worktree
+    ├── verifier.md             # Fresh-context diff & build/test gatekeeper (0 source edits)
+    └── integrator.md           # Post-PASS worktree merger, bundle/deploy & consent-gated SCM
 ```
 
 ## Core Design Principles
 
-- **Zero Inline Code-Touch in Delegated Modes**: The parent session triages, clarifies, verifies, and synthesizes — never pre-exploring or patching source code inline.
-- **Verbatim Intent Fidelity**: Every cold-start brief embeds the user's original prompt verbatim alongside scoped coordinates so intent never degrades across hops.
-- **Collision-Free Multi-Tree Isolation (`H3`)**:
-  - **Clean `HEAD` + build/test contention or Best-of-N**: Spawns isolated Git worktrees (`isolation: "worktree"`, `worktree: true`, `Workspace: "share"`).
-  - **Dirty parent checkout or shared-cwd host**: Automatically falls back to **Shared-Tree Disjoint Seams** (`Authorized Scope` lock + zero `.git/index` mutation) instead of failing worktree preflight or dropping uncommitted user edits.
-- **Fresh Adversarial Verification + Warm Repair**: `verifier` always runs in `fresh` context and **never edits files**; `BLOCK` findings route back to the **same warm `implementer`** session (`<= 3` bounded rounds).
-- **Untracked-Safe Scratch Manifests**: Stores transient manifests in host-ignored scratch paths (`.pi/subagents/`, `$TMPDIR`, or `<ArtifactDir>/scratch/`) so git status stays clean.
+- **Reactive `needs:` Ready-Queue (No Full-Wave Stalls)**: All jobs with `needs: []` launch concurrently; each time any child finishes and wakes the parent, newly unblocked `PENDING` jobs launch immediately without waiting on slower sibling jobs.
+- **Contract & Bundle Separation**: Thin shared contracts (`shared/types.ts`, route schemas, CSS tokens) split into fast upstream nodes (or frozen manifest specs), while shared bundle outputs and full test suites fan in downstream (`needs: [impl-*]`), keeping mid-stage implementation wide and parallel.
+- **Pragmatic Isolation (`H3`)**: Unrelated uncommitted files enter `Protected Paths` instead of blocking parallel disjoint-seam workers; clean `HEAD` tasks with overlapping build contention or `[best-of-n]` use isolated Git worktrees.
+- **Fresh Verification + Warm Repair**: `verifier` runs in `fresh` context without editing source files; `BLOCK` findings route back to the owning warm `implementer` (`<= 3` rounds).
+- **High-Signal Declarative Prompts**: Uses clear state tables and causal rationale rather than noisy all-caps prohibitions, avoiding defensive single-worker collapse on modern reasoning models.
 
 ---
 
@@ -66,16 +64,16 @@ ln -s ~/.agents/skills/lead-orchestrator ~/.gemini/config/skills/lead-orchestrat
 
 ## Usage
 
-Invoke explicitly via slash command (`/lead-orchestrator` or `/skill:lead-orchestrator` in Pi). Auto-triage picks the lightest valid topology, or pass bracket hints to force a mode:
+Invoke explicitly via `/lead-orchestrator` (or `/skill:lead-orchestrator` in Pi). Describe your requirements naturally—the coordinator designs the `jobs + needs` graph automatically—or pass optional bracket hints:
 
 | Invocation | Behavior |
 | --- | --- |
-| `/lead-orchestrator <task>` | Auto-scores task via `H1`–`H3` into `FastPath`, `Focus`, `Swarm`, or `Team` |
-| `/lead-orchestrator [focus] <task>` | Force single-seam deep implementation/investigation + fresh verifier loop |
-| `/lead-orchestrator [swarm] <task>` | Force parallel non-colliding seam trees + peer verifiers (`1` per `2–4` writers) |
-| `/lead-orchestrator [best-of-n] <task>` | Run competing candidate implementations in isolated worktrees and land the winner |
-| `/lead-orchestrator [team] <task>` | Full staged DAG: `scout` -> clarify gate -> scratch manifest -> oracle -> lanes |
-| `/lead-orchestrator [skip-interview] <task>` | Bypass upfront clarification gate in `Team` mode and record explicit assumptions |
+| `/lead-orchestrator <task>` | Auto-routes via `H1`–`H3` into `FastPath`, `Focus`, `Swarm` (`jobs + needs` DAG), or `Team` |
+| `/lead-orchestrator [focus] <task>` | Single-seam implementation/investigation + fresh `verifier` loop |
+| `/lead-orchestrator [swarm] <task>` | Parallel contract-split `jobs + needs` DAG + fresh `verifier` gates |
+| `/lead-orchestrator [best-of-n] <task>` | Competing candidate implementations in isolated worktrees, landing the winner |
+| `/lead-orchestrator [team] <task>` | Parallel `scout` recon -> clarify gate -> `TASK_MANIFEST.md` DAG -> delivery |
+| `/lead-orchestrator [skip-interview] <task>` | Skip upfront clarification in `Team` mode with explicit recorded assumptions |
 
 ## Support
 
